@@ -604,7 +604,7 @@ function autoSaveConfig() {
 }
 
 function copyHelpPrompt() {
-  const prompt = `你好！我是一个小白。我想使用你的 API 来运行一个已有的论文校对网页工具。请用最简单、按部就班的方式，教我如何获取 DeepSeek 的 API Key。请告诉我具体的点击路径。`;
+  const prompt = `你好！我是一个小白。我想使用你的 API 来运行一个已有的论文校对网页工具。请用最简单、按部就班的方式，教我如何获取 DeepSeek 的 API Key。请告诉我具体的点击路径。据我所知应该先去 https://platform.deepseek.com开发者平台 `;
 
   navigator.clipboard.writeText(prompt).then(() => {
     const toast = document.getElementById('helpToast');
