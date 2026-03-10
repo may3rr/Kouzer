@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>抠字儿</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    :root {
+      --bg: #F5F5F7;
+      --surface: #FFFFFF;
+      --text: #1D1D1F;
+      --text-secondary: #86868B;
+      --text-tertiary: #AEAEB2;
+      --border: #D2D2D7;
+      --border-light: #E8E8ED;
+      --accent: #0071E3;
+      --diff-del-bg: #FFEEF0;
+      --diff-del-text: #B31D28;
+      --diff-del-border: #FDAEB7;
+      --diff-ins-bg: #E6FFEC;
+      --diff-ins-text: #22863A;
+      --diff-ins-border: #ABF2BC;
+      --diff-changed-bg: #FFFBDD;
+      --diff-changed-border: #E8C547;
+      --sidebar-w: 380px;
+      --serif-en: 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
+      --serif-cn: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: var(--serif-cn);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.8;
+      overflow-x: hidden;
+    }
+
+    .sidebar-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.25);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 90;
+      backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.active { opacity: 1; visibility: visible; }
+
+    .sidebar {
+      position: fixed; top: 0; right: 0;
+      width: var(--sidebar-w);
+      max-width: 92vw;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 100;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .sidebar-header {
+      padding: 32px 28px 0;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .sidebar-title {
+      font-size: 17px; font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .sidebar-close {
+      background: none; border: none; cursor: pointer;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      color: var(--text-secondary);
+      font-size: 18px; line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-close:hover { background: var(--bg); color: var(--text); }
+
+    .sidebar-body { padding: 28px; flex: 1; }
+
+    .field { margin-bottom: 24px; }
+    .field-label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .field-input {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
+    }
+    .field-input::placeholder { color: var(--text-tertiary); }
+
+    .field-hint {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .field-hint a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .field-hint a:hover { text-decoration: underline; }
+
+    .auto-save-hint {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-bottom: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .auto-save-hint svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border-light);
+      margin: 4px 0 24px;
+    }
+
+    .help-section { margin-bottom: 24px; }
+    .help-title {
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .help-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    .btn-help {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-help:hover { border-color: var(--border); background: var(--surface); }
+    .btn-help svg { width: 13px; height: 13px; opacity: 0.45; }
+
+    .copy-toast {
+      font-size: 11.5px;
+      color: var(--diff-ins-text);
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .copy-toast a { color: var(--accent); text-decoration: none; }
+    .copy-toast.show { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 20px 28px 32px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .disclaimer {
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .disclaimer strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 72px 28px 140px;
+    }
+
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 56px;
+    }
+
+    .title-wrapper {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .github-link {
+      color: var(--text);
+      opacity: 0.45;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: transparent;
+    }
+    .github-link:hover {
+      opacity: 0.8;
+      background: rgba(0, 0, 0, 0.05);
+      transform: scale(1.05);
+    }
+    .github-link svg {
+      width: 20px; height: 20px;
+    }
+
+    header h1 {
+      font-family: var(--serif-cn);
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      background: linear-gradient(135deg, #1D1D1F 0%, #434347 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 2px;
+    }
+    .subtitle {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      opacity: 0.8;
+    }
+
+    .config-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .config-btn:hover {
+      border-color: var(--text-secondary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .config-btn svg { width: 15px; height: 15px; opacity: 0.45; }
+
+    .card { margin-bottom: 48px; }
+
+    textarea {
+      display: block; width: 100%;
+      height: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 36px;
+      font-family: var(--serif-cn);
+      font-size: 15px;
+      line-height: 2;
+      color: var(--text);
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.1);
+    }
+    textarea::placeholder { color: var(--text-tertiary); }
+    textarea:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      display: block; width: 100%;
+      padding: 14px;
+      margin-top: 16px;
+      background: var(--text);
+      color: var(--surface);
+      border: none;
+      border-radius: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.15; cursor: not-allowed; }
+
+    .error-msg {
+      color: var(--diff-del-text);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    .progress-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .progress-label {
+      font-size: 14px; font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .progress-pct {
+      font-size: 14px;
+      font-family: var(--serif-en);
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+    }
+    .progress-track {
+      height: 3px;
+      background: var(--border-light);
+      border-radius: 2px;
+      width: 100%; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .progress-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    .result-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 28px;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .result-header h2 {
+      font-size: 20px; font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .result-summary {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    .result-actions { display: flex; gap: 8px; }
+
+    .btn-outline {
+      padding: 7px 16px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .btn-outline:hover { border-color: var(--text-secondary); }
+
+    .result-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 40px;
+      font-size: 15px;
+      line-height: 2;
+    }
+
+    .result-line {
+      margin-bottom: 20px;
+    }
+    .result-line:last-child { margin-bottom: 0; }
+
+    .line-changed {
+      position: relative;
+      padding: 14px 20px;
+      margin-left: -20px;
+      margin-right: -20px;
+      background: var(--diff-changed-bg);
+      border-left: 3px solid var(--diff-changed-border);
+      border-radius: 0 6px 6px 0;
+    }
+
+    .diff-del {
+      background: var(--diff-del-bg);
+      color: var(--diff-del-text);
+      text-decoration: line-through;
+      text-decoration-color: rgba(179,29,40,0.4);
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid var(--diff-del-border);
+    }
+
+    .diff-ins {
+      background: var(--diff-ins-bg);
+      color: var(--diff-ins-text);
+      font-weight: 500;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid var(--diff-ins-border);
+    }
+
+    .no-issues {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    @media (max-width: 640px) {
+      .main { padding: 48px 18px 100px; }
+      textarea { padding: 24px; height: 300px; border-radius: 10px; }
+      .result-body { padding: 24px; border-radius: 10px; }
+      .result-header { flex-direction: column; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .line-changed { margin-left: -12px; margin-right: -12px; padding: 10px 14px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">模型配置</span>
+      <button class="sidebar-close" onclick="closeSidebar()">&times;</button>
+    </div>
+
+    <div class="sidebar-body">
+      <div class="auto-save-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        填写即生效，无需手动保存
+      </div>
+
+      <div class="field">
+        <label class="field-label">API 地址</label>
+        <input class="field-input" id="cfgApiUrl" type="text" placeholder="https://api.deepseek.com/chat/completions" oninput="autoSaveConfig()">
+        <p class="field-hint">兼容 OpenAI 格式的端点。默认为 DeepSeek。</p>
+      </div>
+
+      <div class="field">
+        <label class="field-label">模型名称</label>
+        <input class="field-input" id="cfgModel" type="text" placeholder="deepseek-chat" oninput="autoSaveConfig()">
+      </div>
+
+      <div class="field">
+        <label class="field-label">API Key</label>
+        <input class="field-input" id="cfgApiKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxx" oninput="autoSaveConfig()">
+        <p class="field-hint">
+          Key 仅存于浏览器内存，刷新即消失。前往 <a href="https://platform.deepseek.com/" target="_blank" rel="noopener">platform.deepseek.com</a> 获取。
+        </p>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="help-section">
+        <p class="help-title">不知道如何获取 API Key？</p>
+        <p class="help-desc">点击按钮复制一份操作指引，然后粘贴到 DeepSeek 网页版提问即可获得手把手教程。</p>
+        <button class="btn-help" onclick="copyHelpPrompt()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          复制提问指引
+        </button>
+        <p class="copy-toast" id="helpToast">已复制 — 前往 <a href="https://chat.deepseek.com/" target="_blank" rel="noopener">deepseek.com</a> 粘贴提问</p>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <p class="disclaimer">
+        <strong>免责声明</strong><br>
+        本工具为个人开发的轻量 Demo，仅供辅助参考，请谨慎使用校对结果。页面为纯静态 HTML，不会保存任何用户数据——你的文本仅在校对时逐段发送至所配置的 AI 模型进行检测。此外，由于公式无法以纯文本形式粘贴，包含公式的段落可能被 AI 误判为"缺少字符"，此类修改建议需自行甄别。
+      </p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <header>
+        <div class="title-wrapper">
+          <h1>抠字儿</h1>
+          <a href="https://github.com/may3rr/kouzer" target="_blank" rel="noopener noreferrer" class="github-link" title="前往 GitHub Repo">
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0c4.42 0 8 3.58 8 8 0 3.54-2.29 6.53-5.47 7.59-.4.07-.55-.17-.55-.38 0-.19-.01-.82-.01-1.49 2.01.37 2.53-.49 2.69-.94.09-.23.48-.94.82-1.13.28-.15.68-.52-.01-.53-.63-.01-1.08.58-1.23.82-.72 1.21-1.87.87-2.33.66-.07-.52-.28-.87-.51-1.07 1.78-.2 3.64-.89 3.64-3.95 0-.87-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.21-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.04-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.27-.82 2.15 0 3.07 1.87 3.75 3.65 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.82-1.23-.82-.69-.01-1.09.52-.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67-.01 1.3-.01 1.49 0 .21-.15.45-.55.38A8.01 8.01 0 0 1 0 8c0-4.42 3.58-8 8-8z"></path>
+            </svg>
+          </a>
+        </div>
+        <p class="subtitle">粘贴正文，静候 AI 逐行勘误</p>
+      </header>
+      <button class="config-btn" onclick="openSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        配置
+      </button>
+    </div>
+
+    <section class="card" id="inputSection">
+      <textarea id="paperInput" placeholder="在此处键入或粘贴论文正文..."></textarea>
+      <p class="error-msg" id="inputError"></p>
+      <button class="btn-primary" id="startBtn" onclick="startCheck()">开始校对</button>
+    </section>
+
+    <section class="card" id="progressSection" style="display:none">
+      <div class="progress-header">
+        <span class="progress-label" id="progressLabel">正在分析</span>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <p class="progress-detail" id="progressDetail">准备中...</p>
+    </section>
+
+    <section class="card" id="resultSection" style="display:none">
+      <div class="result-header">
+        <div>
+          <h2>审阅结果</h2>
+          <p class="result-summary" id="resultSummary"></p>
+        </div>
+        <div class="result-actions">
+          <button class="btn-outline" id="copyBtn" onclick="copyResult()">拷贝全文</button>
+          <button class="btn-outline" onclick="resetCheck()">重置</button>
+        </div>
+      </div>
+      <div id="resultBody" class="result-body"></div>
+    </section>
+  </div>
+
+<script>
+let config = {
+  apiUrl: 'https://api.deepseek.com/chat/completions',
+  model: 'deepseek-chat',
+  apiKey: ''
+};
+
+const BATCH_SIZE = 5;
+const MAX_CONCURRENT = 5;
+
+const SYSTEM_PROMPT = `你是中文学术论文校对专家。用户会发送若干行论文正文（以XML标记），请逐行检查：
+1. 错别字（同音字、形近字误用）
+2. 多字或漏字
+3. 标点符号错误（多余或缺少）
+4. 明显语法错误或用词不当
+
+规则：
+- 如果某行无任何问题，返回的内容必须与原文完全一致，一字不改
+- 仅修正明确的文字错误，不要改变原文的表达方式和写作风格
+- 学术术语和引用标记（如 [1]、[2,3]、[8,52,53]）是正确的，不要修改
+- 专有名词不要修改
+- 严格按要求的XML格式返回，不输出任何其他文字或解释`;
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('active');
+  document.getElementById('cfgApiUrl').value = config.apiUrl;
+  document.getElementById('cfgModel').value = config.model;
+  document.getElementById('cfgApiKey').value = config.apiKey;
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+function autoSaveConfig() {
+  const url = document.getElementById('cfgApiUrl').value.trim();
+  const model = document.getElementById('cfgModel').value.trim();
+  const key = document.getElementById('cfgApiKey').value.trim();
+  if (url) config.apiUrl = url;
+  if (model) config.model = model;
+  config.apiKey = key;
+}
+
+function copyHelpPrompt() {
+  const prompt = `你好！我是一个小白。我想使用你的 API 来做一个论文校对的网页小工具。请用最简单、按部就班的方式，教我如何获取 DeepSeek 的 API Key。请告诉我具体的点击路径。`;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    const toast = document.getElementById('helpToast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+  });
+}
+
+let allLineData = [];
+
+function classifyLine(text, lineNo) {
+  const s = text.trim();
+  if (!s) return '空行';
+  if (/^(图|表)\s*\d/.test(s) && s.length < 80) return '图表标题';
+  if (s.length < 15 && /^[\d\s\.\+\-\*\/\=\(\)\,\;\:a-zA-Z]+$/.test(s)) return '公式/短行';
+  if (lineNo <= 20 && s.length < 60) return '封面信息';
+  if (/^[\d\.]+\s+.*\t\d+$/.test(s)) return '目录';
+  if (/^\[\d+\]/.test(s)) return '参考文献';
+  if (/^\d+(\.\d+)*\s+\S/.test(s) && s.length < 80) return '章节标题';
+  if (/^(摘\s*要|目\s*录|致\s*谢|关键词|Abstract|Key\s*words|附录|攻读|参考文献)/.test(s)) return '特殊标题';
+  const cn = (s.match(/[\u4e00-\u9fff]/g) || []).length;
+  if (s.length > 20 && cn / s.length < 0.1) return '英文段落';
+  if (s.length < 15) return '短行/数据';
+  if ((s.match(/\t/g) || []).length >= 2) return '表格数据';
+  return '正文';
+}
+
+function escapeXML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function unescapeXML(str) {
+  return str.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+}
+
+async function fetchWithRetry(url, options, retries = 2) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
+      }
+      return await res.json();
+    } catch (e) {
+      if (i === retries) throw e;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+}
+
+async function checkBatch(batchLines) {
+  const inputXML = batchLines.map((line, i) =>
+    `<line id="${i + 1}">${escapeXML(line.text.trim())}</line>`
+  ).join('\n');
+
+  const userMessage = `请检查以下各行论文正文，返回修改后的版本。无问题的行保持原文不变。
+
+<lines>
+${inputXML}
+</lines>
+
+请严格按以下XML格式返回（只输出XML，不要有任何其他内容）：
+<lines>
+<line id="序号">修改后的内容</line>
+</lines>`;
+
+  const data = await fetchWithRetry(config.apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`
+    },
+    body: JSON.stringify({
+      model: config.model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage }
+      ],
+      max_tokens: 4096,
+      temperature: 0.1
+    })
+  });
+
+  const content = data.choices[0].message.content;
+  return parseXMLResponse(content);
+}
+
+function parseXMLResponse(text) {
+  text = text.replace(/^```(?:xml)?\s*/gi, '').replace(/```\s*$/g, '').trim();
+  const results = {};
+  try {
+    const wrapped = `<root>${text}</root>`;
+    const doc = new DOMParser().parseFromString(wrapped, 'text/xml');
+    if (!doc.querySelector('parsererror')) {
+      doc.querySelectorAll('line').forEach(el => {
+        const id = parseInt(el.getAttribute('id'));
+        if (!isNaN(id)) results[id] = el.textContent;
+      });
+      if (Object.keys(results).length > 0) return results;
+    }
+  } catch (e) {}
+  const regex = /<line\s+id=["']?(\d+)["']?\s*>([\s\S]*?)<\/line>/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    results[parseInt(match[1])] = unescapeXML(match[2]);
+  }
+  return results;
+}
+
+function computeDiff(a, b) {
+  if (a === b) return [{ type: 'equal', text: a }];
+  const aArr = [...a], bArr = [...b];
+  const m = aArr.length, n = bArr.length;
+  const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = aArr[i-1] === bArr[j-1] ? dp[i-1][j-1]+1 : Math.max(dp[i-1][j], dp[i][j-1]);
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && aArr[i-1] === bArr[j-1]) {
+      ops.push({ type: 'equal', char: aArr[--i] }); j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      ops.push({ type: 'insert', char: bArr[--j] });
+    } else {
+      ops.push({ type: 'delete', char: aArr[--i] });
+    }
+  }
+  ops.reverse();
+  const merged = [];
+  for (const op of ops) {
+    if (merged.length && merged[merged.length-1].type === op.type)
+      merged[merged.length-1].text += op.char;
+    else merged.push({ type: op.type, text: op.char });
+  }
+  return merged;
+}
+
+async function asyncPool(limit, items, fn) {
+  const executing = new Set();
+  for (const item of items) {
+    const p = fn(item).then(() => executing.delete(p));
+    executing.add(p);
+    if (executing.size >= limit) await Promise.race(executing);
+  }
+  await Promise.all(executing);
+}
+
+function updateProgress(completedBatches, totalBatches, totalBodyLines) {
+  const lines = Math.min(completedBatches * BATCH_SIZE, totalBodyLines);
+  const pct = totalBatches === 0 ? 100 : Math.round(completedBatches / totalBatches * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressDetail').textContent = `已处理 ${lines} / ${totalBodyLines} 行正文`;
+}
+
+function showError(msg) {
+  const el = document.getElementById('inputError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideError() { document.getElementById('inputError').style.display = 'none'; }
+
+async function startCheck() {
+  hideError();
+
+  if (!config.apiKey) {
+    showError('请先点击右上角「配置」填写 API Key。');
+    return;
+  }
+
+  const text = document.getElementById('paperInput').value.trim();
+  if (!text) { showError('需要提供文本才能开始校对。'); return; }
+
+  const startBtn = document.getElementById('startBtn');
+  const textarea = document.getElementById('paperInput');
+  startBtn.disabled = true;
+  startBtn.textContent = '处理中...';
+  textarea.disabled = true;
+
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('progressSection').style.display = '';
+
+  const lines = text.split('\n');
+  allLineData = lines.map((t, i) => ({
+    index: i, text: t,
+    type: classifyLine(t, i + 1),
+    corrected: null
+  }));
+
+  const bodyLines = allLineData.filter(l => l.type === '正文');
+
+  if (bodyLines.length === 0) {
+    document.getElementById('progressSection').style.display = 'none';
+    showError('未识别出有效正文段落，请检查内容。');
+    startBtn.disabled = false; startBtn.textContent = '开始校对'; textarea.disabled = false;
+    return;
+  }
+
+  const batches = [];
+  for (let i = 0; i < bodyLines.length; i += BATCH_SIZE)
+    batches.push(bodyLines.slice(i, i + BATCH_SIZE));
+
+  let completed = 0;
+  updateProgress(0, batches.length, bodyLines.length);
+
+  await asyncPool(MAX_CONCURRENT, batches, async (batch) => {
+    try {
+      const result = await checkBatch(batch);
+      for (let k = 0; k < batch.length; k++) {
+        const corrected = result[k + 1];
+        if (corrected !== undefined) batch[k].corrected = corrected;
+      }
+    } catch (e) { console.error('批次处理失败:', e); }
+    completed++;
+    updateProgress(completed, batches.length, bodyLines.length);
+  });
+
+  document.getElementById('progressSection').style.display = 'none';
+  showResults();
+  startBtn.disabled = false; startBtn.textContent = '开始校对'; textarea.disabled = false;
+}
+
+function showResults() {
+  const section = document.getElementById('resultSection');
+  const body = document.getElementById('resultBody');
+  const summary = document.getElementById('resultSummary');
+  section.style.display = '';
+  body.innerHTML = '';
+
+  const bodyCount = allLineData.filter(l => l.type === '正文').length;
+  let changedCount = 0;
+  for (const line of allLineData) {
+    if (line.corrected !== null && line.corrected !== line.text.trim()) changedCount++;
+  }
+
+  summary.textContent = `基于 ${bodyCount} 行正文，产生 ${changedCount} 处修改建议`;
+
+  if (changedCount === 0) {
+    body.innerHTML = '<div class="no-issues"><p>文本无需修改。</p></div>';
+    return;
+  }
+
+  for (const line of allLineData) {
+    const original = line.text.trim();
+    const div = document.createElement('div');
+    div.className = 'result-line';
+
+    if (!original) { div.innerHTML = '<br>'; body.appendChild(div); continue; }
+
+    const isChanged = line.corrected !== null && line.corrected !== original;
+    if (isChanged) {
+      div.classList.add('line-changed');
+      const diffOps = computeDiff(original, line.corrected);
+      for (const op of diffOps) {
+        const span = document.createElement('span');
+        span.textContent = op.text;
+        if (op.type === 'delete') span.className = 'diff-del';
+        else if (op.type === 'insert') span.className = 'diff-ins';
+        div.appendChild(span);
+      }
+    } else {
+      div.textContent = original;
+    }
+    body.appendChild(div);
+  }
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copyResult() {
+  const correctedText = allLineData.map(line => {
+    const original = line.text.trim();
+    return (line.corrected !== null && line.corrected !== original) ? line.corrected : original;
+  }).join('\n');
+
+  navigator.clipboard.writeText(correctedText).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '已拷贝';
+    setTimeout(() => { btn.textContent = '拷贝全文'; }, 2000);
+  }).catch(() => showError('拷贝失败，请手动选择文本。'));
+}
+
+function resetCheck() {
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('inputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('paperInput').focus();
+}
+</script>
+</body>
+</html>
