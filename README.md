@@ -6,7 +6,7 @@
 <img src="./img/eg.png" alt="示例效果" width="600">
 
 ## 使用方式
-1. 下载index.html
+1. 下载并在电脑双击打开index.html
 
 2. 点击配置
 
