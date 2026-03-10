@@ -2,6 +2,8 @@
 
 一个极简的 AI 论文、长文本校对工具。单文件静态 HTML 实现，粘贴文本，静候 AI 逐行抠出语病与错别字。
 
+**[→ 在线试用](https://jackielyu.is-a.dev/Kouzer/)**
+
 ## 示例效果
 <img src="./img/eg.png" alt="示例效果" width="600">
 

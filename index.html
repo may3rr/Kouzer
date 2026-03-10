@@ -598,7 +598,14 @@ function autoSaveConfig() {
   const url = document.getElementById('cfgApiUrl').value.trim();
   const model = document.getElementById('cfgModel').value.trim();
   const key = document.getElementById('cfgApiKey').value.trim();
-  if (url) config.apiUrl = url;
+  if (url) {
+    let normalized = url.replace(/\/+$/, '');
+    if (!normalized.endsWith('/chat/completions')) {
+      if (!normalized.endsWith('/v1')) normalized += '/v1';
+      normalized += '/chat/completions';
+    }
+    config.apiUrl = normalized;
+  }
   if (model) config.model = model;
   config.apiKey = key;
 }
