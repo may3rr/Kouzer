@@ -33,3 +33,10 @@
 
 ## 免责声明
 本工具为个人开发的轻量 Demo，仅供辅助参考，请谨慎使用校对结果。页面为纯静态 HTML，不会保存任何用户数据——你的文本仅在校对时逐段发送至所配置的 AI 模型进行检测。此外，由于公式无法以纯文本形式粘贴，包含公式的段落可能被 AI 误判为"缺少字符"，此类修改建议需自行甄别。
+
+---
+
+<p align="center">
+  如果这个极简的小工具恰好帮助到了你，欢迎留下 <strong>Star 🌟</strong><br>
+  <sub>Built with ❤️ by <a href="https://github.com/may3rr">jackielyu</a></sub>
+</p>
