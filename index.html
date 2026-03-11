@@ -438,6 +438,40 @@
       font-size: 15px;
     }
 
+    .afdian-float {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .afdian-float .afdian-main {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #333;
+    }
+    .afdian-float .afdian-main svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      stroke: #333;
+    }
+    .afdian-float .afdian-main a {
+      color: #3b82f6;
+      text-decoration: underline;
+      font-weight: 500;
+    }
+    .afdian-float .afdian-powered {
+      font-size: 11px;
+      padding-left: 22px;
+      color: #333;
+      text-decoration: none;
+    }
+
     @media (max-width: 640px) {
       .main { padding: 48px 18px 100px; }
       textarea { padding: 24px; height: 300px; border-radius: 10px; }
@@ -445,6 +479,9 @@
       .result-header { flex-direction: column; }
       .topbar { flex-direction: column; align-items: flex-start; gap: 16px; }
       .line-changed { margin-left: -12px; margin-right: -12px; padding: 10px 14px; }
+      .afdian-float { bottom: 14px; left: 14px; }
+      .afdian-float .afdian-main { font-size: 12px; }
+      .afdian-float .afdian-powered { font-size: 10px; padding-left: 22px; }
     }
   </style>
 </head>
@@ -900,5 +937,14 @@ function resetCheck() {
   document.getElementById('paperInput').focus();
 }
 </script>
+
+  <div class="afdian-float">
+    <div class="afdian-main">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+      如果帮助到你，可以考虑<a href="https://afdian.com/a/jackielyu" target="_blank" rel="noopener noreferrer">请我喝杯咖啡</a>
+    </div>
+    <a class="afdian-powered" href="https://afdian.com/a/jackielyu" target="_blank" rel="noopener noreferrer">Powered By 爱发电</a>
+  </div>
+
 </body>
 </html>
