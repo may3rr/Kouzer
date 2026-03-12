@@ -218,6 +218,19 @@
       display: flex; align-items: center; gap: 12px;
     }
 
+    .star-hint {
+      text-align: center;
+      margin: 24px 0 4px;
+      font-size: 0.78rem;
+      color: #1D1D1F;
+      letter-spacing: 0.02em;
+    }
+    .star-hint a {
+      color: #1D1D1F;
+      text-decoration: none;
+      border-bottom: 1px solid #ddd;
+    }
+    .star-hint a:hover { color: #555; border-bottom-color: #555; }
     .github-link {
       color: var(--text);
       opacity: 0.45;
@@ -517,7 +530,7 @@
         <label class="field-label">API Key</label>
         <input class="field-input" id="cfgApiKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxx" oninput="autoSaveConfig()">
         <p class="field-hint">
-          Key 仅存于浏览器内存，刷新即消失。前往 <a href="https://platform.deepseek.com/" target="_blank" rel="noopener">platform.deepseek.com</a> 获取。
+          Key 仅存于浏览器内存。前往 <a href="https://platform.deepseek.com/" target="_blank" rel="noopener">platform.deepseek.com</a> 获取。
         </p>
       </div>
 
@@ -592,14 +605,15 @@
         </div>
       </div>
       <div id="resultBody" class="result-body"></div>
+      <p class="star-hint">可以帮我去 <a href="https://github.com/may3rr/kouzer" target="_blank" rel="noopener noreferrer">GitHub</a> 点个🌟吗？</p>
     </section>
   </div>
 
 <script>
 let config = {
-  apiUrl: 'https://api.deepseek.com/chat/completions',
-  model: 'deepseek-chat',
-  apiKey: ''
+  apiUrl: localStorage.getItem('kouzer_apiUrl') || 'https://api.deepseek.com/chat/completions',
+  model: localStorage.getItem('kouzer_model') || 'deepseek-chat',
+  apiKey: localStorage.getItem('kouzer_apiKey') || ''
 };
 
 const BATCH_SIZE = 5;
@@ -645,6 +659,9 @@ function autoSaveConfig() {
   }
   if (model) config.model = model;
   config.apiKey = key;
+  localStorage.setItem('kouzer_apiUrl', config.apiUrl);
+  localStorage.setItem('kouzer_model', config.model);
+  localStorage.setItem('kouzer_apiKey', config.apiKey);
 }
 
 function copyHelpPrompt() {
