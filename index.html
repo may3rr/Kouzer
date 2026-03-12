@@ -271,6 +271,7 @@
       font-weight: 700;
       letter-spacing: 0.05em;
       background: linear-gradient(135deg, #1D1D1F 0%, #434347 100%);
+      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 2px;
@@ -282,6 +283,25 @@
       color: var(--text-secondary);
       letter-spacing: 0.02em;
       opacity: 0.8;
+    }
+
+    .sub-link {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    .sub-link a {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(29, 29, 31, 0.18);
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .sub-link a:hover {
+      color: #555;
+      border-bottom-color: #555;
     }
 
     .config-btn {
@@ -543,6 +563,7 @@
           </a>
         </div>
         <p class="subtitle">粘贴正文，静候 AI 逐行勘误</p>
+        <p class="sub-link">再找引文自动检测？<a href="https://jackielyu.is-a.dev/Lishun/" target="_blank" rel="noopener noreferrer">试试理顺</a></p>
       </header>
       <button class="config-btn" onclick="openSidebar()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -573,6 +594,7 @@
       <div class="result-header">
         <div>
           <h2>审阅结果</h2>
+        <p class="sub-link">再找参考文献自动检测？<a href="https://jackielyu.is-a.dev/Lishun/" target="_blank" rel="noopener noreferrer">试试理顺</a></p>
           <p class="result-summary" id="resultSummary"></p>
         </div>
         <div class="result-actions">
