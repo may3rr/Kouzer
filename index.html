@@ -664,10 +664,9 @@ function classifyLine(text, lineNo) {
   if (!s) return '空行';
   if (/^(图|表)\s*\d/.test(s) && s.length < 80) return '图表标题';
   if (s.length < 15 && /^[\d\s\.\+\-\*\/\=\(\)\,\;\:a-zA-Z]+$/.test(s)) return '公式/短行';
-  if (lineNo <= 20 && s.length < 60) return '封面信息';
   if (/^[\d\.]+\s+.*\t\d+$/.test(s)) return '目录';
   if (/^\[\d+\]/.test(s)) return '参考文献';
-  if (/^\d+(\.\d+)*\s+\S/.test(s) && s.length < 80) return '章节标题';
+  if (/^\d+(\.\d+)*\s+\S/.test(s) && s.length < 50) return '章节标题';
   if (/^(摘\s*要|目\s*录|致\s*谢|关键词|Abstract|Key\s*words|附录|攻读|参考文献)/.test(s)) return '特殊标题';
   const cn = (s.match(/[\u4e00-\u9fff]/g) || []).length;
   if (s.length > 20 && cn / s.length < 0.1) return '英文段落';
