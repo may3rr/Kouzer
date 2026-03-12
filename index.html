@@ -868,6 +868,7 @@ async function startCheck() {
     batches.push(bodyLines.slice(i, i + BATCH_SIZE));
 
   let completed = 0;
+  let firstError = null;
   updateProgress(0, batches.length, bodyLines.length);
 
   await asyncPool(MAX_CONCURRENT, batches, async (batch) => {
@@ -877,12 +878,31 @@ async function startCheck() {
         const corrected = result[k + 1];
         if (corrected !== undefined) batch[k].corrected = corrected;
       }
-    } catch (e) { console.error('批次处理失败:', e); }
+    } catch (e) {
+      console.error('批次处理失败:', e);
+      if (!firstError) firstError = e;
+    }
     completed++;
     updateProgress(completed, batches.length, bodyLines.length);
   });
 
   document.getElementById('progressSection').style.display = 'none';
+
+  if (firstError) {
+    const msg = firstError.message || '';
+    if (msg.includes('401')) {
+      showError('API Key 无效或已过期，请点击右上角「配置」重新填写。');
+    } else if (msg.includes('402') || msg.includes('insufficient')) {
+      showError('账户余额不足，请前往平台充值后重试。');
+    } else if (msg.includes('429')) {
+      showError('请求过于频繁，请稍后重试。');
+    } else {
+      showError(`请求失败：${msg.slice(0, 100)}`);
+    }
+    startBtn.disabled = false; startBtn.textContent = '开始校对'; textarea.disabled = false;
+    return;
+  }
+
   showResults();
   startBtn.disabled = false; startBtn.textContent = '开始校对'; textarea.disabled = false;
 }
