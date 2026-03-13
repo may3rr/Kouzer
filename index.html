@@ -594,7 +594,7 @@
       <div class="result-header">
         <div>
           <h2>审阅结果</h2>
-        <p class="sub-link">再找参考文献自动检测？<a href="https://jackielyu.is-a.dev/Lishun/" target="_blank" rel="noopener noreferrer">试试理顺</a></p>
+        <p class="sub-link">在找参考文献自动检测？<a href="https://jackielyu.is-a.dev/Lishun/" target="_blank" rel="noopener noreferrer">试试理顺</a></p>
           <p class="result-summary" id="resultSummary"></p>
         </div>
         <div class="result-actions">
@@ -620,15 +620,17 @@ let config = {
 const BATCH_SIZE = 5;
 const MAX_CONCURRENT = 5;
 
-const SYSTEM_PROMPT = `你是中文学术论文校对专家。用户会发送若干行论文正文（以XML标记），请逐行检查：
-1. 错别字（同音字、形近字误用）
+const SYSTEM_PROMPT = `你是中英文学术论文校对专家。用户会发送若干行论文内容（以XML标记），请逐行检查：
+1. 中文错别字（同音字、形近字误用）
 2. 多字或漏字
-3. 标点符号错误（多余或缺少）
-4. 明显语法错误或用词不当
+3. 中英文标点符号错误（多余或缺少）
+4. 明显语法错误、用词不当或英文拼写错误
 
 规则：
 - 如果某行无任何问题，返回的内容必须与原文完全一致，一字不改
 - 仅修正明确的文字错误，不要改变原文的表达方式和写作风格
+- 如果该行是中文内容或以中文为主的内容，应默认将全角标点和全角符号视为正确写法，不要仅因其为全角而改成半角
+- 如果该行是段落式英文内容，应默认将半角标点和半角符号视为正确写法，不要仅因其为半角而改成全角
 - 学术术语和引用标记（如 [1]、[2,3]、[8,52,53]）是正确的，不要修改
 - 专有名词不要修改
 - 严格按要求的XML格式返回，不输出任何其他文字或解释`;
@@ -721,7 +723,7 @@ async function checkBatch(batchLines) {
     `<line id="${i + 1}">${escapeXML(line.text.trim())}</line>`
   ).join('\n');
 
-  const userMessage = `请检查以下各行论文正文，返回修改后的版本。无问题的行保持原文不变。
+  const userMessage = `请检查以下各行论文内容，返回修改后的版本。无问题的行保持原文不变。
 
 <lines>
 ${inputXML}
@@ -814,12 +816,16 @@ async function asyncPool(limit, items, fn) {
   await Promise.all(executing);
 }
 
-function updateProgress(completedBatches, totalBatches, totalBodyLines) {
-  const lines = Math.min(completedBatches * BATCH_SIZE, totalBodyLines);
+function isCheckableLine(line) {
+  return line.type === '正文' || line.type === '英文段落';
+}
+
+function updateProgress(completedBatches, totalBatches, totalCheckLines) {
+  const lines = Math.min(completedBatches * BATCH_SIZE, totalCheckLines);
   const pct = totalBatches === 0 ? 100 : Math.round(completedBatches / totalBatches * 100);
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressPct').textContent = pct + '%';
-  document.getElementById('progressDetail').textContent = `已处理 ${lines} / ${totalBodyLines} 行正文`;
+  document.getElementById('progressDetail').textContent = `已处理 ${lines} / ${totalCheckLines} 行待校对内容`;
 }
 
 function showError(msg) {
@@ -855,22 +861,22 @@ async function startCheck() {
     corrected: null
   }));
 
-  const bodyLines = allLineData.filter(l => l.type === '正文');
+  const checkableLines = allLineData.filter(isCheckableLine);
 
-  if (bodyLines.length === 0) {
+  if (checkableLines.length === 0) {
     document.getElementById('progressSection').style.display = 'none';
-    showError('未识别出有效正文段落，请检查内容。');
+    showError('未识别出可校对的正文或英文段落，请检查内容。');
     startBtn.disabled = false; startBtn.textContent = '开始校对'; textarea.disabled = false;
     return;
   }
 
   const batches = [];
-  for (let i = 0; i < bodyLines.length; i += BATCH_SIZE)
-    batches.push(bodyLines.slice(i, i + BATCH_SIZE));
+  for (let i = 0; i < checkableLines.length; i += BATCH_SIZE)
+    batches.push(checkableLines.slice(i, i + BATCH_SIZE));
 
   let completed = 0;
   let firstError = null;
-  updateProgress(0, batches.length, bodyLines.length);
+  updateProgress(0, batches.length, checkableLines.length);
 
   await asyncPool(MAX_CONCURRENT, batches, async (batch) => {
     try {
@@ -884,7 +890,7 @@ async function startCheck() {
       if (!firstError) firstError = e;
     }
     completed++;
-    updateProgress(completed, batches.length, bodyLines.length);
+    updateProgress(completed, batches.length, checkableLines.length);
   });
 
   document.getElementById('progressSection').style.display = 'none';
@@ -915,13 +921,13 @@ function showResults() {
   section.style.display = '';
   body.innerHTML = '';
 
-  const bodyCount = allLineData.filter(l => l.type === '正文').length;
+  const checkableCount = allLineData.filter(isCheckableLine).length;
   let changedCount = 0;
   for (const line of allLineData) {
     if (line.corrected !== null && line.corrected !== line.text.trim()) changedCount++;
   }
 
-  summary.textContent = `基于 ${bodyCount} 行正文，产生 ${changedCount} 处修改建议`;
+  summary.textContent = `基于 ${checkableCount} 行正文/英文段落，产生 ${changedCount} 处修改建议`;
 
   if (changedCount === 0) {
     body.innerHTML = '<div class="no-issues"><p>文本无需修改。</p></div>';
