@@ -6,7 +6,7 @@
   <title>抠字儿</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after {
       margin: 0; padding: 0; box-sizing: border-box;
@@ -32,13 +32,13 @@
       --diff-changed-bg: #FFFBDD;
       --diff-changed-border: #E8C547;
       --sidebar-w: 380px;
-      --serif-en: 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
+      --serif-en: 'EB Garamond', 'Times New Roman', Georgia, serif;
       --serif-cn: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
     }
 
     body {
       background: var(--bg);
-      font-family: var(--serif-cn);
+      font-family: var(--serif-en), var(--serif-cn);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.8;
@@ -629,6 +629,7 @@ const SYSTEM_PROMPT = `你是中英文学术论文校对专家。用户会发送
 规则：
 - 如果某行无任何问题，返回的内容必须与原文完全一致，一字不改
 - 仅修正明确的文字错误，不要改变原文的表达方式和写作风格
+- 必须保持原文使用的中文字形体系：简体保持简体，繁体保持繁体，不要做简繁转换
 - 如果该行是中文内容或以中文为主的内容，应默认将全角标点和全角符号视为正确写法，不要仅因其为全角而改成半角
 - 如果该行是段落式英文内容，应默认将半角标点和半角符号视为正确写法，不要仅因其为半角而改成全角
 - 学术术语和引用标记（如 [1]、[2,3]、[8,52,53]）是正确的，不要修改
