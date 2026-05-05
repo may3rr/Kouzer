@@ -527,7 +527,7 @@
 
       <div class="field">
         <label class="field-label">模型名称</label>
-        <input class="field-input" id="cfgModel" type="text" placeholder="deepseek-chat" oninput="autoSaveConfig()">
+        <input class="field-input" id="cfgModel" type="text" placeholder="deepseek-v4-flash" oninput="autoSaveConfig()">
       </div>
 
       <div class="field">
@@ -619,7 +619,7 @@
 <script>
 let config = {
   apiUrl: localStorage.getItem('kouzer_apiUrl') || 'https://api.deepseek.com/chat/completions',
-  model: localStorage.getItem('kouzer_model') || 'deepseek-chat',
+  model: localStorage.getItem('kouzer_model') || 'deepseek-v4-flash',
   apiKey: localStorage.getItem('kouzer_apiKey') || ''
 };
 
