@@ -226,32 +226,52 @@
       display: flex; align-items: center; gap: 12px;
     }
 
-    .star-hint {
+    .sponsor-hint {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      margin: 24px 0 4px;
-      font-size: 0.78rem;
-      color: #1D1D1F;
-      letter-spacing: 0.02em;
+      gap: 12px;
+      margin: 32px 0 4px;
+    }
+    .sponsor-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-family: var(--serif-cn);
+      letter-spacing: 0.03em;
+    }
+    .sponsor-prices {
+      font-size: 16px;
+      color: var(--text);
+      font-family: var(--serif-cn);
+      letter-spacing: 0.04em;
+      font-weight: 500;
+    }
+    .sponsor-img {
+      width: 320px;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
     .star-hint-line {
       display: flex;
       align-items: center;
       gap: 5px;
+      font-size: 0.78rem;
+      color: #1D1D1F;
+      letter-spacing: 0.02em;
+      margin-top: 8px;
     }
-    .star-hint svg {
+    .star-hint-line svg {
       width: 14px; height: 14px;
       flex-shrink: 0;
       stroke: #1D1D1F;
     }
-    .star-hint a {
+    .star-hint-line a {
       color: #1D1D1F;
       text-decoration: none;
       border-bottom: 1px solid #ddd;
     }
-    .star-hint a:hover { color: #555; border-bottom-color: #555; }
+    .star-hint-line a:hover { color: #555; border-bottom-color: #555; }
     .github-link {
       color: var(--text);
       opacity: 0.45;
@@ -609,10 +629,15 @@
         </div>
       </div>
       <div id="resultBody" class="result-body"></div>
-      <p class="star-hint">
-        <span class="star-hint-line"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>如果帮助到你可以<a href="https://afdian.com/a/jackielyu" target="_blank" rel="noopener noreferrer">请我喝蜜雪冰城</a></span>
-        <span class="star-hint-line"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>或者一个免费的 <a href="https://github.com/may3rr/kouzer" target="_blank" rel="noopener noreferrer">Star</a></span>
-      </p>
+      <div class="sponsor-hint" id="sponsorHint" style="display:none">
+        <p class="sponsor-text">如果帮到你可以考虑赞赏我</p>
+        <p class="sponsor-prices">1元 / 5元 / 10元 / 20元 / 50元 / 100元</p>
+        <img src="img/sponser.jpg" alt="赞赏码" class="sponsor-img">
+        <p class="star-hint-line">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          或者一个免费的 <a href="https://github.com/may3rr/kouzer" target="_blank" rel="noopener noreferrer">Star</a>
+        </p>
+      </div>
     </section>
   </div>
 
@@ -935,6 +960,9 @@ function showResults() {
   }
 
   summary.textContent = `基于 ${checkableCount} 行正文/英文段落，产生 ${changedCount} 处修改建议`;
+
+  const sponsorHint = document.getElementById('sponsorHint');
+  sponsorHint.style.display = changedCount > 0 ? '' : 'none';
 
   if (changedCount === 0) {
     body.innerHTML = '<div class="no-issues"><p>文本无需修改。</p></div>';
